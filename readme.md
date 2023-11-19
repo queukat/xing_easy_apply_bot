@@ -1,4 +1,4 @@
-# Web Scraping Bot for Job Listings
+# xing_easy_apply_bot
 
 ## Description
 This project is a Python-based web scraping bot designed to automate the process of collecting job listings from various websites. It integrates with services like join.com, reply.com, and adesso, streamlining the job application process.
