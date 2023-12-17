@@ -3,216 +3,168 @@ import os
 import pickle
 import random
 import time
-
+import logging
 from langdetect import detect
-from selenium.common.exceptions import NoSuchElementException
-from selenium.common.exceptions import TimeoutException
+from selenium.common.exceptions import NoSuchElementException, TimeoutException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.select import Select
-from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support.ui import WebDriverWait, Select
 
 from config import *
 
+# Set up basic logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 def is_logged_in():
-    """Check if the user is logged in by searching for the profile image element."""
     try:
-        driver.find_element(By.CSS_SELECTOR, "img[data-testid='top-bar-logo']")
+        driver.find_element(By.CSS_SELECTOR, "img[data-testid='top-bar-profile-logo']")
         return True
     except NoSuchElementException:
         return False
 
 def login():
-    """Perform login to the site.
+    logging.info("Starting login process...")
 
-    First, it tries to load cookies. If that fails, it proceeds with the standard login process.
-    """
-    print("Starting login process...")
-
-    # Attempt to load cookies first
     load_cookies(driver, xing_cookies_file_path, "https://www.xing.com/")
-    time.sleep(2)  # Allow page to load after setting cookies
+    time.sleep(2)
 
     if is_logged_in():
-        print("Login successful using cookies.")
+        logging.info("Logged in successfully using cookies.")
         return
 
-    # Standard login with username and password if cookies don't work
     driver.get("https://login.xing.com/")
     time.sleep(2)
 
-    # Attempt to close cookie consent popup
     try:
-        consent_button = driver.find_element(By.ID, "accept-button")
+        consent_button = driver.find_element(By.ID, "consent-accept-button")
         consent_button.click()
-        time.sleep(2)  # Wait to ensure the popup is closed
+        time.sleep(2)
     except Exception as e:
-        print("Cookie consent popup not found:", e)
+        logging.warning(f"Consent popup not found: {e}")
 
-    # Entering login credentials
     driver.find_element(By.ID, "username").send_keys(EMAIL)
     driver.find_element(By.ID, "password").send_keys(PASSWORD)
 
-    # Clicking the login button
-    login_button = driver.find_element(By.XPATH, "//button[contains(., 'Entering')]")
+    login_button = driver.find_element(By.XPATH, "//button[contains(., 'Log in')]")
     login_button.click()
     time.sleep(2)
 
-    # Save cookies after login
     pickle.dump(driver.get_cookies(), open(xing_cookies_file_path, "wb"))
-    print("Login completed successfully.")
+    logging.info("Login completed.")
 
 def load_cookies(driver, cookies_file_path, url):
-    """Load cookies from a file and add them to the browser.
-
-    Args:
-        driver: Selenium WebDriver instance.
-        cookies_file_path: Path to the file where cookies are stored.
-        url: URL to navigate to before setting cookies.
-    """
     if os.path.exists(cookies_file_path):
         driver.get(url)
         cookies = pickle.load(open(cookies_file_path, "rb"))
         for cookie in cookies:
             driver.add_cookie(cookie)
         driver.get(url)
-        print("Cookies successfully loaded and added.")
+        logging.info("Cookies successfully loaded and added.")
     else:
-        print("Cookie file not found. Login required.")
+        logging.warning("Cookies file not found. Login required.")
 
-def ensure_login_and_navigate_to_jobs():
-    """Ensure the user is logged in and navigate to the job listings page.
+def start_scraping_process():
+    for url in initial_urls:
+        logging.info(f"Starting data collection from {url}...")
+        ensure_login_and_navigate_to_jobs(url)  # Navigate to the initial URL
+        scrape_jobs()  # Collect jobs from the current URL
 
-    If cookies are available, it loads them; otherwise, it performs a login process.
-    After login, navigates to the jobs page.
-    """
+
+# This function checks for cookies and tries to load them. If not, starts the login process.
+def ensure_login_and_navigate_to_jobs(url):
     if os.path.exists(xing_cookies_file_path):
-        print("Loading saved cookies...")
+        logging.info("Loading saved cookies...")
         load_cookies(driver, xing_cookies_file_path, "https://www.xing.com/")
         driver.get(url)
         remove_location_filter(driver)
         driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
         time.sleep(3)
     else:
-        print("Cookies not found, login process required...")
+        logging.info("Cookies not found, login process needed...")
         login()
         driver.get(url)
         remove_location_filter(driver)
         driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
         time.sleep(3)
-    
-    # Wait for the full page load
-    WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.TAG_NAME, 'content')))
-    print("On the job listings page.")
+    WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.TAG_NAME, 'body')))
+    logging.info("On the job listings page.")
 
 
 def remove_location_filter(driver):
-    """Remove the location filter from the job search page.
-
-    Args:
-        driver: Selenium WebDriver instance.
-    """
     try:
-        # Wait for the location filter removal button to appear
         location_filter = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located(
-                (By.CSS_SELECTOR, "[data-cy='tag-location'] [data-testid='delete']"))
+                (By.CSS_SELECTOR, "[data-cy='search-query-tag-location'] [data-testid='deleteable']"))
         )
         location_filter.click()
-        print("Location filter removed.")
+        logging.info("Location filter removed.")
 
-        # Optionally, wait for the filter to disappear after removal
         WebDriverWait(driver, 10).until_not(
-            EC.presence_of_element_located((By.CSS_SELECTOR, "[data-cy='tag-location']"))
+            EC.presence_of_element_located((By.CSS_SELECTOR, "[data-cy='search-query-tag-location']"))
         )
-        print("Location filter removal confirmed.")
-
+        logging.info("Location filter removal confirmed.")
     except TimeoutException:
-        print("Location filter not found or could not be removed in time.")
+        logging.warning("Location filter not found or could not be removed in time.")
 
 def detect_language(text):
-    """Detect the language of the given text.
-
-    Args:
-        text: String of text to detect the language.
-
-    Returns:
-        Detected language code or 'unknown' if detection fails.
-    """
     try:
         return detect(text)
     except:
+        logging.error("Error in language detection.")
         return "unknown"
 
 def load_existing_urls(file_path):
-    """Load existing URLs from a file.
-
-    Args:
-        file_path: Path to the CSV file containing URLs.
-
-    Returns:
-        A set of URLs.
-    """
     existing_urls = set()
     try:
         with open(file_path, 'r', newline='', encoding='utf-8') as file:
             reader = csv.reader(file)
-            headers = next(reader, None)  # Skip the header
+            headers = next(reader, None)
             if headers:
                 for row in reader:
-                    existing_urls.add(row[0])  # Assuming URL is in the first column
+                    existing_urls.add(row[0])
+        logging.info("Existing URLs loaded successfully.")
     except FileNotFoundError:
-        print("File not found, a new one will be created.")
+        logging.warning("File not found, a new one will be created.")
     return existing_urls
 
 def initialize_scraping():
-    """Initialize the scraping process.
-
-    Returns:
-        A tuple containing a set of existing URLs, a boolean indicating if the file exists, and the WebDriver instance.
-    """
     existing_urls = load_existing_urls('job_listings.csv')
     file_exists = os.path.exists('job_listings.csv')
+    logging.info(f"File exists: {file_exists}, initializing scraping.")
     return existing_urls, file_exists, driver
-  
+
 def collect_job_listings(driver, writer, existing_urls):
-    """Collect job listings from the web page and write them to a CSV file.
-
-    Args:
-        driver: Selenium WebDriver instance.
-        writer: CSV writer object.
-        existing_urls: Set of URLs already collected.
-
-    Returns:
-        Total number of URLs collected.
-    """
     total_urls_collected = 0
     current_page = 1
+
+    job_keywords = ["data-engineer", "big-data-developer", "big-data-engineer", "etl-developer",
+                    "data-quality", "data-systems-engineer", "data-architecture", "data-pipeline",
+                    "dataengineer", "data-architect", "datalake", "data-warehouse", "data-analyst",
+                    "data-platform-engineer", "analytics-engineer", "migration", "big-data"]
 
     while True:
         driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
         time.sleep(5)
 
         WebDriverWait(driver, 10).until(
-            EC.presence_of_all_elements_located((By.CSS_SELECTOR, "article.sc-0"))
+            EC.presence_of_all_elements_located((By.CSS_SELECTOR, "article.sc-1d9waxr-0"))
         )
 
-        job_listings = driver.find_elements(By.CSS_SELECTOR, "article.sc-0")
+        job_listings = driver.find_elements(By.CSS_SELECTOR, "article.sc-1d9waxr-0")
         urls_collected_this_page = 0
 
         for job in job_listings:
-            job_url = job.find_element(By.CSS_SELECTOR, 'a.sc-1').get_attribute('href')
-            job_description = job.find_element(By.CSS_SELECTOR, 'p[data-xds="Body"]').text
+            job_url = job.find_element(By.CSS_SELECTOR, 'a.sc-1lqq9u1-1').get_attribute('href')
+            job_description = job.find_element(By.CSS_SELECTOR, 'p[data-xds="BodyCopy"]').text
             language = detect_language(job_description)
 
-            if language == 'en' and job_url not in existing_urls:
+            if language == 'en' and any(keyword in job_url for keyword in job_keywords) and job_url not in existing_urls:
                 existing_urls.add(job_url)
                 writer.writerow([job_url, language, ''])
                 total_urls_collected += 1
                 urls_collected_this_page += 1
 
-        print(f"Collected {urls_collected_this_page} job listings from page {current_page}. Total collected: {total_urls_collected}")
+        logging.info(f"Collected {urls_collected_this_page} jobs from page {current_page}. Total collected: {total_urls_collected}")
 
         if not navigate_to_next_page(driver, current_page):
             break
@@ -222,15 +174,6 @@ def collect_job_listings(driver, writer, existing_urls):
     return total_urls_collected
 
 def navigate_to_next_page(driver, current_page):
-    """Navigate to the next page of job listings.
-
-    Args:
-        driver: Selenium WebDriver instance.
-        current_page: Current page number.
-
-    Returns:
-        True if navigation is successful, False otherwise.
-    """
     try:
         next_page_xpath = f"//a[contains(text(),'{current_page + 1}')]"
         next_buttons = driver.find_elements(By.XPATH, next_page_xpath)
@@ -243,20 +186,18 @@ def navigate_to_next_page(driver, current_page):
                 time.sleep(3)
                 return True
 
-        print(f"Failed to find button to navigate to page {current_page + 1}.")
+        logging.warning(f"Failed to find button to navigate to page {current_page + 1}.")
         return False
 
     except NoSuchElementException:
-        print("Next page button not found.")
+        logging.error("Next page button not found.")
         return False
     except Exception as e:
-        print(f"Error occurred while navigating to page {current_page + 1}: {e}")
+        logging.error(f"Error navigating to page {current_page + 1}: {e}")
         return False
 
-
 def scrape_jobs():
-    """Main function to start the job scraping process."""
-    print("Starting job scraping...")
+    logging.info("Starting job collection...")
     existing_urls, file_exists, driver = initialize_scraping()
 
     with open('job_listings.csv', 'a' if file_exists else 'w', newline='', encoding='utf-8') as file:
@@ -265,10 +206,12 @@ def scrape_jobs():
             writer.writerow(['URL', 'Language', 'Application Sent', 'join_urls'])
 
         total_urls_collected = collect_job_listings(driver, writer, existing_urls)
-        print(f"Job scraping completed. Total URLs collected: {total_urls_collected}")
+        logging.info(f"Job collection complete. Total URLs collected: {total_urls_collected}")
+
 
 def visit_english_jobs_and_apply():
-    """Visit job listings with English descriptions and attempt to apply."""
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
     with open('job_listings.csv', 'r', newline='', encoding='utf-8') as file:
         rows = list(csv.reader(file))
 
@@ -283,14 +226,14 @@ def visit_english_jobs_and_apply():
         if len(row) < len(headers):
             row += [''] * (len(headers) - len(row))
 
-        job_url, language, application_sent = row[:3]
+        job_url, language, application_sent, join_urls, employer_urls = row[:5]
         if language == 'en' and (application_sent == '' or application_sent == 'error'):
-            print(f"Visiting job listing: {job_url}")
+            logging.info(f"Visiting job listing: {job_url}")
             driver.get(job_url)
 
             try:
                 employer_links = WebDriverWait(driver, 7).until(
-                    EC.presence_of_all_elements_located((By.CSS_SELECTOR, "a[class='employer-link']"))  
+                    EC.presence_of_all_elements_located((By.CSS_SELECTOR, "a[data-testid='applyAction']"))
                 )
                 employer_urls = [link.get_attribute('href') for link in employer_links]
                 row[headers.index('employer_urls')] = '|'.join(employer_urls)
@@ -298,59 +241,43 @@ def visit_english_jobs_and_apply():
                 join_com_url = next((url for url in employer_urls if "join.com" in url), '')
                 row[headers.index('join_urls')] = join_com_url
                 row[2] = 'success' if join_com_url else 'not valid'
-                print(f"Status of job listing {job_url}: {'success' if join_com_url else 'not valid'}")
-                continue
+                logging.info(f"Status of job {job_url}: {'success' if join_com_url else 'not valid'}")
             except TimeoutException:
-                print(f"'Visit employer website' button did not load in time for job listing: {job_url}")
+                logging.error(f"'Visit employer website' button did not load in time for job: {job_url}")
                 row[2] = 'error'
 
             try:
                 WebDriverWait(driver, 7).until(
-                    EC.presence_of_element_located(
-                        (By.CSS_SELECTOR, "button[class='apply-now-button']")) 
+                    EC.presence_of_element_located((By.CSS_SELECTOR, "button[data-testid='xing-application-action']"))
                 )
-                print(f"'Easy apply' button found for job listing: {job_url}")
+                logging.info(f"Found 'Easy apply' button for job: {job_url}")
                 row[2] = 'quick_apply'
-                continue
             except TimeoutException:
-                print(f"'Easy apply' button not found for job listing: {job_url}")
+                logging.warning(f"'Easy apply' button not found for job: {job_url}")
 
-                # Check if the job listing is no longer available
+                # Check if the job posting has been removed
             try:
-                expired_message = driver.find_elements(By.XPATH,
-                                                       "//h2[contains(text(), 'This job ad is not available.')]")  
+                expired_message = driver.find_elements(By.XPATH, "//h2[contains(text(), \"This job ad isn't available.\")]")
                 if expired_message:
-                    print(f"Job listing {job_url} is no longer available.")
+                    logging.info(f"Job {job_url} has been removed from posting.")
                     row[2] = 'expired'
-                    continue
             except NoSuchElementException:
-                print(f"Job listing {job_url} is active.")
+                logging.info(f"Job {job_url} is active.")
 
-            finally:
-                with open('job_listings.csv', 'w', newline='', encoding='utf-8') as file_to_write:
-                    writer = csv.writer(file_to_write)
-                    writer.writerow(headers)
-                    writer.writerows(data)
-
+            with open('job_listings.csv', 'w', newline='', encoding='utf-8') as file_to_write:
+                writer = csv.writer(file_to_write)
+                writer.writerow(headers)
+                writer.writerows(data)
+                
 def prompt_for_new_jobs():
-    """Prompt the user to decide whether to update the job listings."""
-    update_jobs = input("Would you like to update the job listings? (yes/no): ")
+    update_jobs = input("Do you want to update the job listings? (yes/no): ")
     if update_jobs.lower() == 'yes':
-        print("Updating job listings...")
+        logging.info("Updating job listings...")
         scrape_jobs()
     else:
-        print("Job listings update canceled.")
-
+        logging.info("Job listing update canceled.")
 
 def file_exists_and_complete(file_path):
-    """Check if the file exists and is complete.
-
-    Args:
-        file_path: Path to the CSV file.
-
-    Returns:
-        A tuple (file_exists, is_complete) indicating if the file exists and is complete.
-    """
     if not os.path.exists(file_path):
         return False, False
 
@@ -362,92 +289,177 @@ def file_exists_and_complete(file_path):
 
         for row in reader:
             if row[headers.index('Language')] == 'en' and row[headers.index('Application Sent')] == '':
-                return True, False  # Found an unprocessed row
+                return True, False  # Found a row that has not been processed yet
 
-        return True, True  # All rows are processed
+        return True, True  # All rows have been processed
 
 
 def xing_easy_apply():
-    """Process job listings for easy apply on Xing.com."""
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+    if not os.path.exists('job_listings.csv'):
+        logging.error('File job_listings.csv not found.')
+        return
+
     with open('job_listings.csv', 'r', newline='', encoding='utf-8') as file:
         rows = list(csv.reader(file))
         headers = rows[0]
         data = rows[1:]
 
-    print("Beginning to process jobs on xing.com...")
+    logging.info("Starting to process jobs on xing.com...")
 
     for i, row in enumerate(data):
         if len(row) < len(headers):
-            row.extend([''] * (len(headers) - len(row)))
+            row += [''] * (len(headers) - len(row))
 
         job_url, language, application_sent, join_com_url = row[:4]
-        if language == 'en' and application_sent in ['quick_apply', 'error_easy', 'error_form', 'uncertain'] and job_url:
-            print(f"Processing job listing on xing.com: {job_url}")
+        if language == 'en' and application_sent in ['quick_apply', 'error_easy', 'error_form', 'uncertain']:
+            logging.info(f"Processing job on xing.com: {job_url}")
             driver.get(job_url)
 
-            # Check the job status
             try:
                 job_status = WebDriverWait(driver, 10).until(
                     EC.presence_of_element_located(
-                        (By.CSS_SELECTOR, "h2[class='job-status']"))  
+                        (By.CSS_SELECTOR, "h2.sc-1gpssxl-0.gPoYAw.sc-1wks242-0.eJwPOg"))
                 ).text
                 if job_status == "This job ad isn't available.":
-                    print(f"Job listing {job_url} is no longer available.")
+                    logging.info(f"Job {job_url} has been removed from posting.")
                     row[headers.index('Application Sent')] = 'expired'
                     continue
             except TimeoutException:
-                print("Job status not found, continuing processing.")
+                logging.info("Job status not found, continuing processing.")
 
-            # Check if already applied to this job
             try:
                 application_status = WebDriverWait(driver, 10).until(
                     EC.presence_of_element_located(
-                        (By.CSS_SELECTOR, "div[class='application-status']"))  
+                        (By.CSS_SELECTOR, "div[data-xds='ContentBanner']"))
                 ).text
                 if "You applied for this job" in application_status:
-                    print(f"Already applied for job listing {job_url}.")
+                    logging.info(f"Already applied for job {job_url}.")
                     row[headers.index('Application Sent')] = 'done'
                     continue
             except TimeoutException:
-                print("Application status not found, continuing processing.")
+                logging.info("Application status not found, continuing processing.")
 
-            # Search and click the apply button
             selectors = [
-                ".generic-apply-button",  
-                "button[class='apply-now-button']",  
+                ".iUTVJn .sc-6z95j0-5",  # Your original selector
+                "button[data-testid='xing-application-action']",  # Another example selector
                 "//button[contains(text(), 'Apply')]",  # XPath selector
-                "//button[contains(text(), 'Easy apply')]",  # XPath selector
-                "//button[contains(text(), 'Quick apply')]",  # XPath selector
+                "//button[contains(text(), 'Easy apply')]",
+                "//button[contains(text(), 'Quick apply')]",
             ]
 
             clicked = False
+
             for selector in selectors:
                 try:
-                    element = WebDriverWait(driver, 10).until(
-                        EC.presence_of_element_located((By.XPATH, selector)) if selector.startswith("//") else 
-                        EC.presence_of_element_located((By.CSS_SELECTOR, selector))
-                    )
+                    if selector.startswith("//"):  # If it's an XPath
+                        element = WebDriverWait(driver, 10).until(
+                            EC.presence_of_element_located((By.XPATH, selector))
+                        )
+                    else:  # If it's a CSS selector
+                        element = WebDriverWait(driver, 10).until(
+                            EC.presence_of_element_located((By.CSS_SELECTOR, selector))
+                        )
+
                     if "Apply" in element.text or "Easy apply" in element.text or "Quick apply" in element.text:
                         driver.execute_script("arguments[0].click();", element)
-                        time.sleep(random.randint(3, 8))
-                        print(f"Button clicked with selector: {selector}")
+                        time.sleep(random.randint(3,8))
+                        logging.info(f"Button found and clicked with selector: {selector}")
                         clicked = True
                         break
+
                 except (TimeoutException, NoSuchElementException):
-                    print(f"Element with selector '{selector}' not found.")
+                    logging.warning(f"Element with selector '{selector}' not found.")
 
             if not clicked:
-                print("Failed to click any of the buttons.")
+                logging.error("Failed to click any of the buttons.")
                 row[headers.index('Application Sent')] = 'error_easy'
                 continue
 
-            # ... Remaining code for form filling and submission
-            # This part includes interactions with various form elements like dropdowns, inputs, and submission buttons
-            # The specifics are omitted for brevity and security purposes
+            try:
+                country_dropdown = WebDriverWait(driver, 20).until(
+                    EC.presence_of_element_located((By.NAME, "countryCode"))
+                )
+                select_country = Select(country_dropdown)
+                try:
+                    select_country.select_by_value(country_code)
+                    logging.info("Country code "country_code" selected.")
+                except NoSuchElementException:
+                    logging.warning("Element with country code "country_code" not found.")
+
+                time.sleep(3)
+
+                phone_input = driver.find_element(By.NAME, "phone")
+                phone_input.send_keys(phone)
+                logging.info("Phone number entered.")
+
+                driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
+                time.sleep(5)
+
+                try:
+                    upload_input = WebDriverWait(driver, 10).until(
+                        EC.presence_of_element_located((By.CSS_SELECTOR, "input[type='file'][name='fileToUpload']"))
+                    )
+                    upload_input.send_keys(RESUME_PATH)
+                    logging.info(f"Resume uploaded from {RESUME_PATH}.")
+                except TimeoutException:
+                    logging.error("Failed to find file upload element.")
+
+                try:
+                    WebDriverWait(driver, 10).until(
+                        EC.presence_of_element_located(
+                            (By.CSS_SELECTOR, "li.uploads-list-uploads-list-listItem-e46d8dc1"))
+                    )
+                    logging.info("Resume file successfully uploaded.")
+                except TimeoutException:
+                    logging.warning("Failed to confirm resume file upload.")
+
+                submit_button = driver.find_element(By.CSS_SELECTOR, "button[data-cy='instant-apply-confirm-button']")
+                submit_button.click()
+                time.sleep(3)
+
+                try:
+                    error_message = WebDriverWait(driver, 10).until(
+                        EC.presence_of_element_located((By.CSS_SELECTOR, "div[data-testid='upload-error-banner']"))
+                    )
+                    if error_message:
+                        logging.error("Error occurred during form submission.")
+                        row[headers.index('Application Sent')] = 'uncertain'
+                        continue
+                except TimeoutException:
+                    logging.info("No error message found, continuing processing.")
+
+                try:
+                    confirmation_icon = WebDriverWait(driver, 20).until(
+                        EC.presence_of_element_located((By.CSS_SELECTOR, "svg[data-xds='IllustrationSpotCheck']"))
+                    )
+                    confirmation_title = WebDriverWait(driver, 20).until(
+                        EC.presence_of_element_located(
+                            (By.XPATH, "//h1[contains(text(), 'Application submitted')]"))
+                    )
+                    confirmation_paragraph = WebDriverWait(driver, 20).until(
+                        EC.presence_of_element_located(
+                            (By.XPATH, "//p[contains(text(), \"You'll receive an e-mail confirming your application soon.\")]")
+                        )
+                    )
+
+                    if confirmation_title or confirmation_paragraph or confirmation_icon:
+                        logging.info("Application successfully submitted.")
+                        row[headers.index('Application Sent')] = 'done'
+                    else:
+                        logging.warning("Submission status unknown.")
+                        row[headers.index('Application Sent')] = 'uncertain'
+                except TimeoutException:
+                    logging.error("Timeout while waiting for submission confirmation.")
+                    row[headers.index('Application Sent')] = 'uncertain'
+
+            except Exception as e:
+                logging.error(f"Error while filling out the form: {e}")
+                row[headers.index('Application Sent')] = 'error_form'
 
             finally:
-                data[i] = row  # Update the data row
-                # Update the job listings file
+                data[i] = row  # Updating the data row
                 with open('job_listings.csv', 'w', newline='', encoding='utf-8') as file_to_write:
                     writer = csv.writer(file_to_write)
                     writer.writerow(headers)
