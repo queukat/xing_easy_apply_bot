@@ -42,8 +42,8 @@ def login():
     except Exception as e:
         logging.warning(f"Consent popup not found: {e}")
 
-    driver.find_element(By.ID, "username").send_keys(EMAIL)
-    driver.find_element(By.ID, "password").send_keys(PASSWORD)
+    driver.find_element(By.ID, "username").send_keys(EMAIL_XING)
+    driver.find_element(By.ID, "password").send_keys(PASSWORD_XING)
 
     login_button = driver.find_element(By.XPATH, "//button[contains(., 'Log in')]")
     login_button.click()
@@ -384,14 +384,14 @@ def xing_easy_apply():
                 select_country = Select(country_dropdown)
                 try:
                     select_country.select_by_value(country_code)
-                    logging.info("Country code "country_code" selected.")
+                    logging.info("Country code {country_code} selected.")
                 except NoSuchElementException:
-                    logging.warning("Element with country code "country_code" not found.")
+                    logging.warning("Element with country code {country_code} not found.")
 
                 time.sleep(3)
 
                 phone_input = driver.find_element(By.NAME, "phone")
-                phone_input.send_keys(phone)
+                phone_input.send_keys(TELEPHONE)
                 logging.info("Phone number entered.")
 
                 driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")

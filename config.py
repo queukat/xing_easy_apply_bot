@@ -1,3 +1,5 @@
+import logging
+
 from selenium import webdriver
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.service import Service
@@ -10,8 +12,8 @@ xing_cookies_file_path = 'xing_cookies.pkl'
 join_com_cookies_file_path = 'join_com_cookies.pkl'
 
 
-EMAIL = ""
-PASSWORD = ""
+EMAIL_XING = ""
+PASSWORD_XING = ""
 
 EMAIL_JOIN = ""
 PASSWORD_JOIN = ""
@@ -20,6 +22,8 @@ TELEPHONE = f"+......."
 
 FIRST_NAME = ""
 LAST_NAME = ""
+
+country_code = ''
 
 XING = "https://www.xing.com/profile/....."
 
@@ -42,3 +46,10 @@ initial_urls = [
 'https://www.xing.com/jobs/search?country=de.02516e&country=ch.e594f5&country=at.ef7781&keywords=big%20data'
 
 ]
+
+# WebDriver settings
+TIMEOUT = 10
+WAIT_TIME = 5
+
+# Logging settings
+LOG_LEVEL = logging.INFO
