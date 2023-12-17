@@ -2,10 +2,11 @@ import csv
 import time
 import logging
 from langdetect import detect
+from selenium.common.exceptions import TimeoutException, WebDriverException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-from config import driver, LOG_LEVEL, JOB_LISTINGS_FILE, WAIT_TIME, TIMEOUT
+from config import driver, LOG_LEVEL, file_path, WAIT_TIME, TIMEOUT
 
 # Configure logging
 logging.basicConfig(level=LOG_LEVEL, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -85,18 +86,9 @@ def run_job_processing():
     """
     Run the job processing workflow.
     """
-    headers, data = load_job_listings(JOB_LISTINGS_FILE)
+    headers, data = load_job_listings(file_path)
     process_job_listings(headers, data)
-    save_job_listings(JOB_LISTINGS_FILE, headers, data)
+    save_job_listings(file_path, headers, data)
 
 
 
-# Paths
-JOB_LISTINGS_FILE = 'path/to/job_listings.csv'
-
-# WebDriver settings
-TIMEOUT = 10
-WAIT_TIME = 5
-
-# Logging settings
-LOG_LEVEL = logging.INFO

@@ -778,7 +778,7 @@ def match_question_and_provide_answer(question_text, questions_answers_db):
         logging.info(f"No answer found for the question: {question_text}")
         return None
 
-def save_questions_answers_db(file_path, db):
+def save_questions_answers_db(db_file_path, db):
     """
     Saves the database of questions and answers to a file.
 
@@ -786,9 +786,9 @@ def save_questions_answers_db(file_path, db):
     :param db: The database of questions and answers to be saved.
     """
     try:
-        with open(file_path, 'w') as file:
+        with open(db_file_path, 'w') as file:
             json.dump(db, file, indent=4)
-        logging.info(f"Database successfully saved to file: {file_path}")
+        logging.info(f"Database successfully saved to file: {db_file_path}")
     except Exception as e:
         logging.error(f"Error saving the database: {e}")
 
@@ -813,5 +813,5 @@ def load_questions_answers_db(file_path):
         return {}
 
 
-
+questions_answers_db = load_questions_answers_db(db_file_path)
 

@@ -5,7 +5,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
-from config import driver, RESUME_PATH, EMAIL, TELEPHONE, FIRST_NAME, LAST_NAME, XING, LINKEDIN
+from config import driver, RESUME_PATH, EMAIL_XING, TELEPHONE, FIRST_NAME, LAST_NAME, XING, LINKEDIN
 
 # Load the list of job listings from a file
 with open('job_listings.csv', 'r', newline='', encoding='utf-8') as file:
@@ -98,7 +98,7 @@ for i, row in enumerate(data):
             driver.find_element(By.NAME, "firstName").send_keys(FIRST_NAME)
             time.sleep(3)
             driver.find_element(By.NAME, "lastName").send_keys(LAST_NAME)
-            driver.find_element(By.NAME, "email").send_keys(EMAIL)
+            driver.find_element(By.NAME, "email").send_keys(EMAIL_XING)
             driver.find_element(By.NAME, "telephone").send_keys(TELEPHONE)
             driver.find_element(By.NAME, "cv").send_keys(RESUME_PATH)
             time.sleep(3)
