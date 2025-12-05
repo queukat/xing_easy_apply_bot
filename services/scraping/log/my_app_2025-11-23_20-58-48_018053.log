@@ -1,5 +1,0 @@
-20:58:49 [INFO] [Config] Browser init: headless=False
-20:58:54 [DEBUG] [Join] Cookie banner root not found.
-20:58:54 [DEBUG] [ahuman_delay] sleep ≈ 1.97 s (async)
-20:59:26 [INFO] [Join] User refused to log in.
-20:59:26 [WARNING] [Join] Not authorized, exiting from apply_incomplete_applications.
