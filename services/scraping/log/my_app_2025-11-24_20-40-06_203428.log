@@ -1,0 +1,25 @@
+20:40:07 [INFO] [Config] Browser init: headless=False
+20:40:11 [DEBUG] [Join] Cookie banner root not found.
+20:40:11 [DEBUG] [ahuman_delay] sleep ≈ 3.32 s (async)
+20:40:15 [INFO] [Join] Scrolling applications page (step 1/5).
+20:40:15 [DEBUG] [ahuman_delay] sleep ≈ 1.35 s (async)
+20:40:16 [INFO] [Join] No more content loaded on scroll, stopping.
+20:40:16 [DEBUG] [Join] Cookie banner root not found.
+20:40:16 [DEBUG] [ahuman_delay] sleep ≈ 2.61 s (async)
+20:40:19 [INFO] [Join] Found 100 applications on the current page.
+20:40:20 [INFO] [Join] Found 3 'Incomplete application' apps on this page.
+20:40:20 [INFO] [Join] Total unique 'Incomplete application' links: 3
+20:40:20 [INFO] [Join] Found 3 incomplete apps (on up to 3 pages).
+20:40:20 [INFO] [Join] Filling form: https://join.com/talent/applications/45257406
+20:40:25 [DEBUG] [Join] Cookie banner root not found.
+20:40:25 [DEBUG] [ahuman_delay] sleep ≈ 3.40 s (async)
+20:40:29 [DEBUG] [ahuman_delay] sleep ≈ 0.71 s (async)
+20:40:30 [DEBUG] [ahuman_delay] sleep ≈ 2.96 s (async)
+20:40:33 [INFO] [Join] Clicked 'Complete application'
+20:40:33 [DEBUG] [ahuman_delay] sleep ≈ 1.46 s (async)
+20:40:34 [DEBUG] [ahuman_delay] sleep ≈ 1.77 s (async)
+20:40:36 [INFO] [Join] Screening question: Confirm your CV
+20:40:36 [INFO] [Join] Question found, but no known field type was detected
+20:40:36 [ERROR] [Join] Error filling application https://join.com/talent/applications/45257406: 'str' object has no attribute 'get'
+20:40:36 [WARNING] [Join] Could not submit application: https://join.com/talent/applications/45257406
+20:40:36 [INFO] [Join] Filling form: https://join.com/talent/applications/45251918

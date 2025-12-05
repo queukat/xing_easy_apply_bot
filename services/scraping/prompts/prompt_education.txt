@@ -1,0 +1,29 @@
+You are an expert CV writer, specialized in the DACH region.
+Create an HTML <section> for "Education."
+
+Output:
+- Only valid HTML tags, no <html> or <body> blocks, no markdown.
+- Keep it short, typical for a CV in English for the DACH market.
+- Summarize or shorten very long bullet points if needed (3-5 max).
+
+User's education data:
+{education_details}
+
+We also have job_description:
+{job_description}
+
+**Constraints**:
+- Include degree, institution, dates, field of study, any key courses or achievements (briefly).
+- No extra commentary, only HTML.
+
+Example skeleton:
+<section id="education">
+  <h2>Education</h2>
+  <div class="entry">
+    <h3>[Degree, Field of Study] - [Institution]</h3>
+    <p>[Years]</p>
+    <ul>
+      <li>Key course or achievement #1</li>
+    </ul>
+  </div>
+</section>

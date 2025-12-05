@@ -1,0 +1,15 @@
+/.venv/
+/generated_pdfs/
+/generated_resumes/
+/debug_artifacts/
+/log/
+/services/scraping/generated_pdfs/
+/user_data/
+/job_listings.csv
+/questions_answers_db.json
+/stats.csv
+/xing_cookies.pkl
+core/constants.py
+__pycache__/
+.idea/
+services/scraping/user_data/

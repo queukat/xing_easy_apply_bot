@@ -1,0 +1,30 @@
+20:59:28 [INFO] [Config] Browser init: headless=False
+20:59:34 [DEBUG] [Join] Cookie banner root not found.
+20:59:34 [DEBUG] [ahuman_delay] sleep ≈ 2.53 s (async)
+20:59:37 [INFO] [Join] Scrolling applications page (step 1/5).
+20:59:37 [DEBUG] [ahuman_delay] sleep ≈ 1.66 s (async)
+20:59:38 [INFO] [Join] No more content loaded on scroll, stopping.
+20:59:38 [DEBUG] [Join] Cookie banner root not found.
+20:59:38 [DEBUG] [ahuman_delay] sleep ≈ 2.94 s (async)
+20:59:41 [INFO] [Join] Found 100 applications on the current page.
+20:59:42 [INFO] [Join] Found 3 'Incomplete application' apps on this page.
+20:59:42 [INFO] [Join] Total unique 'Incomplete application' links: 3
+20:59:42 [INFO] [Join] Found 3 incomplete apps (on up to 3 pages).
+20:59:42 [INFO] [Join] Filling form: https://join.com/talent/applications/45257406
+20:59:46 [DEBUG] [Join] Cookie banner root not found.
+20:59:46 [DEBUG] [ahuman_delay] sleep ≈ 3.57 s (async)
+20:59:50 [DEBUG] [ahuman_delay] sleep ≈ 0.69 s (async)
+20:59:51 [DEBUG] [ahuman_delay] sleep ≈ 2.06 s (async)
+20:59:53 [INFO] [Join] Clicked 'Complete application'
+20:59:53 [DEBUG] [ahuman_delay] sleep ≈ 1.27 s (async)
+20:59:55 [DEBUG] [ahuman_delay] sleep ≈ 1.96 s (async)
+20:59:57 [INFO] [Join] Screening question: Confirm your CV
+20:59:57 [INFO] [Join] Info-only screening page (no input expected), will just click Continue.
+20:59:57 [DEBUG] [ahuman_delay] sleep ≈ 0.59 s (async)
+20:59:57 [INFO] [Join] Clicked 'Continue' after question
+20:59:57 [DEBUG] [ahuman_delay] sleep ≈ 1.81 s (async)
+20:59:59 [INFO] [Join] Screening question: Upload your cover letter
+20:59:59 [INFO] [Join] Question found, but no known field type was detected
+20:59:59 [WARNING] [Join] No final submit button found
+20:59:59 [WARNING] [Join] Could not submit application: https://join.com/talent/applications/45257406
+20:59:59 [INFO] [Join] Filling form: https://join.com/talent/applications/45251918

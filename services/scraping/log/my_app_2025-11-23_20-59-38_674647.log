@@ -1,0 +1,9 @@
+20:59:39 [INFO] [Config] Browser init: headless=False
+20:59:46 [DEBUG] [Join] Cookie banner root not found.
+20:59:46 [DEBUG] [ahuman_delay] sleep ≈ 1.38 s (async)
+21:00:04 [INFO] [Join] Starting login...
+21:00:09 [DEBUG] [Join] Cookie banner root not found.
+21:00:09 [DEBUG] [ahuman_delay] sleep ≈ 2.34 s (async)
+21:00:11 [ERROR] [Join] Could not find email input field.
+21:00:11 [ERROR] [Join] Failed to log in. Stopping.
+21:00:11 [WARNING] [Join] Not authorized, exiting from apply_incomplete_applications.

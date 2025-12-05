@@ -1,0 +1,39 @@
+22:09:25 [INFO] [Config] Browser init: headless=False
+22:09:36 [DEBUG] [Join] Cookie banner root not found.
+22:09:36 [DEBUG] [ahuman_delay] sleep ≈ 3.25 s (async)
+22:09:39 [INFO] [Join] Scrolling applications page (step 1/5).
+22:09:39 [DEBUG] [ahuman_delay] sleep ≈ 1.04 s (async)
+22:09:40 [INFO] [Join] No more content loaded on scroll, stopping.
+22:09:40 [DEBUG] [Join] Cookie banner root not found.
+22:09:40 [DEBUG] [ahuman_delay] sleep ≈ 2.62 s (async)
+22:09:43 [INFO] [Join] Found 100 applications on the current page.
+22:09:44 [INFO] [Join] Found 3 'Incomplete application' apps on this page.
+22:09:44 [INFO] [Join] Total unique 'Incomplete application' links: 3
+22:09:44 [INFO] [Join] Found 3 incomplete apps (on up to 3 pages).
+22:09:44 [INFO] [Join] Filling form: https://join.com/talent/applications/45257406
+22:09:49 [DEBUG] [Join] Cookie banner root not found.
+22:09:49 [DEBUG] [ahuman_delay] sleep ≈ 3.54 s (async)
+22:09:53 [DEBUG] [ahuman_delay] sleep ≈ 0.70 s (async)
+22:09:54 [DEBUG] [ahuman_delay] sleep ≈ 2.66 s (async)
+22:09:56 [INFO] [Join] Clicked 'Complete application'
+22:09:56 [DEBUG] [ahuman_delay] sleep ≈ 1.47 s (async)
+22:09:59 [DEBUG] [ahuman_delay] sleep ≈ 1.83 s (async)
+22:10:00 [INFO] [Join] Screening question: Confirm your CV
+22:10:00 [INFO] [Join] Info-only screening page (no input expected), will just click Continue.
+22:10:00 [DEBUG] [ahuman_delay] sleep ≈ 0.92 s (async)
+22:10:01 [INFO] [Join] Clicked 'Continue' after question
+22:10:01 [DEBUG] [ahuman_delay] sleep ≈ 2.00 s (async)
+22:10:03 [INFO] [Join] Screening question: Upload your cover letter
+22:10:03 [INFO] [Join] Info-only screening page (no input expected), will just click Continue.
+22:10:04 [DEBUG] [ahuman_delay] sleep ≈ 0.66 s (async)
+22:10:04 [INFO] [Join] Clicked 'Continue' after question
+22:10:04 [DEBUG] [ahuman_delay] sleep ≈ 1.59 s (async)
+22:10:06 [INFO] [Join] Screening question: When are you available to start working with us?
+22:10:06 [INFO] [Join] Question found, but no known field type was detected
+22:10:06 [INFO] [Join] No 'Continue' button on unknown-question page, stopping screening loop
+22:10:06 [WARNING] [Join] No final submit button found
+22:10:06 [WARNING] [Join] Could not submit application: https://join.com/talent/applications/45257406
+22:10:06 [INFO] [Join] Filling form: https://join.com/talent/applications/45251918
+22:10:11 [DEBUG] [Join] Cookie banner root not found.
+22:10:11 [DEBUG] [ahuman_delay] sleep ≈ 2.51 s (async)
+22:10:13 [DEBUG] [ahuman_delay] sleep ≈ 0.87 s (async)

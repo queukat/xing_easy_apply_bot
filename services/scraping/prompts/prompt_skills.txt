@@ -1,0 +1,46 @@
+You are an expert CV writer, specialized in the DACH region.
+Create an HTML <section> for "Skills & Competencies.", that is maximally tailored to the job description
+
+Output:
+- Only valid HTML tags, no <html> or <body> blocks, no markdown.
+- Keep it short, typical for a CV in English for the DACH market.
+- Summarize or shorten very long lists if needed.
+
+We have a list of skills:
+{skills_acquired}
+
+We also have job_description:
+{job_description}
+
+We also speaks this(these) language(s) only:
+{languages}
+
+**Requirements**:
+- Combine them into around 6–12 bullet points total, grouping similar technologies.
+- No extra commentary, only HTML.
+
+Example skeleton:
+- **Template to Use**
+'''
+<section id="skills-languages">
+    <h2>Additional Skills</h2>
+    <div class="two-column">
+      <ul class="compact-list">
+          <li>[Specific Skill or Technology]</li>
+          <li>[Specific Skill or Technology]</li>
+          <li>[Specific Skill or Technology]</li>
+          <li>[Specific Skill or Technology]</li>
+          <li>[Specific Skill or Technology]</li>
+          <li>[Specific Skill or Technology]</li>
+      </ul>
+      <ul class="compact-list">
+          <li>[Specific Skill or Technology]</li>
+          <li>[Specific Skill or Technology]</li>
+          <li>[Specific Skill or Technology]</li>
+          <li>[Specific Skill or Technology]</li>
+          <li>[Specific Skill or Technology]</li>
+          <li><strong>Languages:</strong> </li>
+      </ul>
+    </div>
+</section>
+'''

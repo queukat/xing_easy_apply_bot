@@ -1,0 +1,15 @@
+20:58:07 [INFO] [Config] Browser init: headless=False
+20:58:15 [DEBUG] [Join] Cookie banner root not found.
+20:58:15 [DEBUG] [ahuman_delay] sleep ≈ 1.45 s (async)
+20:58:22 [INFO] [Join] Starting login...
+20:58:25 [DEBUG] [Join] Cookie banner root not found.
+20:58:25 [DEBUG] [ahuman_delay] sleep ≈ 3.72 s (async)
+20:58:29 [DEBUG] [Join] Filling email via selector: input#email
+20:58:29 [DEBUG] [ahuman_delay] sleep ≈ 1.07 s (async)
+20:58:30 [DEBUG] [Join] Filling password via selector: input#password
+20:58:30 [DEBUG] [ahuman_delay] sleep ≈ 1.63 s (async)
+20:58:32 [DEBUG] [ahuman_delay] sleep ≈ 3.45 s (async)
+20:58:36 [ERROR] [Join] Failed to log in (check login/password or selectors).
+20:58:36 [DEBUG] [Join] Current URL after login attempt: https://accounts.google.com/v3/signin/identifier?opparams=%253F&dsh=S-1744775499%3A1763917111087344&access_type=offline&client_id=725109194020-dn8feivu1506mt865fai2o19r1g58ugm.apps.googleusercontent.com&code_challenge=zMyQgDAY0oZw6mltZpBWefK3HTIIFQJwrPZu_JBBK3c&code_challenge_method=S256&o2v=2&prompt=select_account&redirect_uri=https%3A%2F%2Fjoin.com%2Fcandidate%2Fsso&response_type=code&scope=openid+email+profile&service=lso&flowName=GeneralOAuthFlow&continue=https%3A%2F%2Faccounts.google.com%2Fsignin%2Foauth%2Fconsent%3Fauthuser%3Dunknown%26part%3DAJi8hAOlHpdSkistTc1MELTGUIG7eHp0nvfm4hRZw3IhzNZRj4Lh7KpzV4DKKRUahwaIlZGxg7Wp2_g_66r3NKnbQFudcOBhgzMcmKVeaNYjy8FmjJvtNLE6A7LwsolwJx_LqgMEaLyI4LGSMv9ef6atNaTtQ0ghfwXNV4id9m4yp6iMzVwBb9zgn8zOEqwgA7y1i6Jvmfdi6wz0cCHPuay5oI5h3UMT0TTGtUq6id3gmo98qDofdvk4iQgeDAwagR90yjajKvwSLuNH98kypT1oAg42vNZdv2Y9eK5LxHmlauOAn735vGT1D_-PSJfCyt5MGKR_d9lb5-oey2z3UiF3khdYq6Nn46Br8knj7x-OF3tHkPV514SHdqFyC1dIiwTMvGWC6ty-f_fYhyLcbq4QSGnSdRSl0BqwYodCg5oWHoplJAPIrMWGA80x92azbt9vYc3NVPe5D88jIGt00cAvWphYUYX1dw%26flowName%3DGeneralOAuthFlow%26as%3DS-1744775499%253A1763917111087344%26client_id%3D725109194020-dn8feivu1506mt865fai2o19r1g58ugm.apps.googleusercontent.com%26requestPath%3D%252Fsignin%252Foauth%252Fconsent%23&app_domain=https%3A%2F%2Fjoin.com&rart=ANgoxcfj6PR8nFiYM10TC8WY21wtbfr4x8IJuPcJtwNQHRaH4_yUbQ-PTyGpn27kbua76KBHTpj4QnUhF8Z-H1pxfq3Xkr-kD9tnfgErjcdxwNYyR5lvHl4
+20:58:36 [ERROR] [Join] Failed to log in. Stopping.
+20:58:36 [WARNING] [Join] Not authorized, exiting from apply_incomplete_applications.

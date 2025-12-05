@@ -1,0 +1,5 @@
+20:35:46 [INFO] [Config] Browser init: headless=False
+20:35:55 [DEBUG] [Join] Cookie banner root not found.
+20:35:55 [DEBUG] [ahuman_delay] sleep ≈ 1.79 s (async)
+20:35:57 [INFO] [Join] Already logged in (on /talent/home).
+20:35:57 [WARNING] [Join] Not authorized, exiting from apply_incomplete_applications.
