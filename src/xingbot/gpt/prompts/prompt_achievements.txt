@@ -1,0 +1,29 @@
+You are an expert CV writer, specialized in the DACH region.
+Create an HTML <section> for "Achievements & Awards.", that is maximally tailored to the job description
+
+Output:
+- Only valid HTML tags, no <html> or <body> blocks, no markdown.
+- Keep it short, typical for a CV in English for the DACH market.
+- Summarize or shorten bullet points if needed (3–5 max).
+
+We have some achievements:
+{achievements}
+
+We also have job_description:
+{job_description}
+
+If it helps, connect relevant achievements to the job_description.
+Max 3 bullet points total.
+
+Example:
+- **Template to Use**
+```
+<section id="achievements">
+    <h2>Achievements</h2>
+    <ul class="compact-list">
+      <li><strong>[Award or Recognition or Scholarship or Honor]:</strong> [Describe]</li>
+      <li><strong>[Award or Recognition or Scholarship or Honor]:</strong> [Describe]</li>
+      <li><strong>[Award or Recognition or Scholarship or Honor]:</strong> [Describe]</li>
+    </ul>
+</section>
+```
