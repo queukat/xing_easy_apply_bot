@@ -23,3 +23,6 @@ __pycache__/
 services/scraping/user_data/
 /services/scraping/log/
 /.env
+/docs/xing.md
+/docs/report.txt
+/services/scraping/questions_answers_db.json
