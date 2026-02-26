@@ -6,8 +6,6 @@ from pathlib import Path
 
 from loguru import logger
 
-logger.remove()
-
 LOG_DIR = Path("log")
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -17,6 +15,8 @@ CONSOLE_FORMAT = (
     "<cyan>{module}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - "
     "<level>{message}</level>"
 )
+
+_VALID_LEVELS = {"TRACE", "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"}
 
 
 def _read_env_value(key: str, default: str = "") -> str:
@@ -42,30 +42,48 @@ def _read_env_value(key: str, default: str = "") -> str:
     return default
 
 
-def _normalize_level() -> str:
-    level = _read_env_value("LOG_LEVEL", "INFO").upper().strip()
-    return level if level in {"TRACE", "DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"} else "INFO"
+def _normalize_level(level: str | None = None) -> str:
+    raw = (level or _read_env_value("LOG_LEVEL", "INFO")).upper().strip()
+    return raw if raw in _VALID_LEVELS else "INFO"
 
-logger.add(
-    sys.stdout,
-    format=CONSOLE_FORMAT,
-    level=_normalize_level(),
-    colorize=True,
-    backtrace=False,
-    diagnose=False,
-)
 
-FILE_FORMAT = "{time:YYYY-MM-DD HH:mm:ss} | {level: <8} | {module}:{function}:{line} - {message}"
-logger.add(
-    str(LOG_DIR / "xingbot_{time:YYYYMMDD}.log"),
-    rotation="10 MB",
-    retention="14 days",
-    compression="zip",
-    level="DEBUG",
-    format=FILE_FORMAT,
-    encoding="utf-8",
-    backtrace=True,
-    diagnose=False,
-)
+def configure_logging(level: str | None = None) -> str:
+    effective_level = _normalize_level(level)
+    logger.remove()
+    logger.add(
+        sys.stdout,
+        format=CONSOLE_FORMAT,
+        level=effective_level,
+        colorize=True,
+        backtrace=False,
+        diagnose=False,
+    )
 
-__all__ = ["logger"]
+    file_format = "{time:YYYY-MM-DD HH:mm:ss} | {level: <8} | {module}:{function}:{line} - {message}"
+    logger.add(
+        str(LOG_DIR / "xingbot_{time:YYYYMMDD}.log"),
+        rotation="10 MB",
+        retention="14 days",
+        compression="zip",
+        level="DEBUG",
+        format=file_format,
+        encoding="utf-8",
+        backtrace=True,
+        diagnose=False,
+    )
+    return effective_level
+
+
+_CONSOLE_LEVEL = configure_logging()
+
+
+def get_console_log_level() -> str:
+    return _CONSOLE_LEVEL
+
+
+def set_console_log_level(level: str | None = None) -> str:
+    global _CONSOLE_LEVEL
+    _CONSOLE_LEVEL = configure_logging(level)
+    return _CONSOLE_LEVEL
+
+__all__ = ["logger", "get_console_log_level", "set_console_log_level"]

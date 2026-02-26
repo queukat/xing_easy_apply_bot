@@ -11,6 +11,7 @@
 /questions_answers_db.json
 /stats.csv
 /xing_cookies.pkl
+/xing_storage_state.json
 /.env
 /.env.local
 /.env

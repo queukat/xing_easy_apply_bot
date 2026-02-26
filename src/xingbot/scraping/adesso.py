@@ -4,16 +4,41 @@ import asyncio
 import csv
 import os
 import shutil
+from enum import Enum
 
 from bs4 import BeautifulSoup
 from langdetect import detect
 from playwright.async_api import Page, TimeoutError
 
-from core.constants import OPENAI_API_KEY, RESUME_YAML_FILE, STYLES_CSS_FILE
-from core.enums import ApplyStatus, JobCsvColumn
-from core.logger import logger
-from src.xingbot.gpt.gpt_resume_builder import _build_pdf_filename, generate_entire_resume_pdf
-from services.scraping.utils import ahuman_delay, load_resume_data
+try:
+    from core.constants import OPENAI_API_KEY, RESUME_YAML_FILE, STYLES_CSS_FILE
+    from core.enums import ApplyStatus, JobCsvColumn
+    from core.logger import logger
+    from services.scraping.utils import ahuman_delay, load_resume_data
+except ModuleNotFoundError:
+    from xingbot.enums import JobCsvColumn
+    from xingbot.logging import logger
+    from xingbot.utils.human import ahuman_delay
+    from xingbot.utils.text import load_yaml as _load_yaml
+
+    OPENAI_API_KEY = ""
+    RESUME_YAML_FILE = "resume.yaml"
+    STYLES_CSS_FILE = "styles.css"
+
+    class ApplyStatus(str, Enum):
+        LANG_SKIP = "lang_skip"
+        NO_APPLY_BUTTON = "no_apply_button"
+        ERROR_FORM_NOT_FOUND = "error_form_not_found"
+        SUBMIT_NOT_FOUND = "submit_not_found"
+        DONE = "done"
+        UNCERTAIN = "uncertain"
+        DUPLICATE = "duplicate"
+        EXTERNAL = "external"
+
+    def load_resume_data(path: str) -> dict:
+        return _load_yaml(path)
+
+from xingbot.gpt.gpt_resume_builder import _build_pdf_filename, generate_entire_resume_pdf
 
 JOB_LISTINGS_FILE_PATH_ADESSO = "../job_listings.csv"
 

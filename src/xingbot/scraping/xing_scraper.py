@@ -8,8 +8,8 @@ from xingbot.xing.client import XingClient, detect_lang
 
 
 async def scrape_xing_jobs(page: Page, settings: Settings) -> None:
-    client = XingClient(settings)
-    await client.collect_jobs(page)
+    async with XingClient(settings) as client:
+        await client.collect_jobs(page)
 
 
 async def apply_to_relevant_jobs(
@@ -24,19 +24,19 @@ async def apply_to_relevant_jobs(
     max_actions: int | None = None,
     action_interval_s: float | None = None,
 ) -> None:
-    client = XingClient(
+    async with XingClient(
         settings,
         dry_run=dry_run,
         confirm_send=confirm_send,
         max_actions_per_run=max_actions,
         action_interval_s=action_interval_s,
-    )
-    await client.apply_to_relevant_jobs(
-        page,
-        min_score=min_score,
-        message=message,
-        attachments=tuple(Path(p) for p in attachments),
-    )
+    ) as client:
+        await client.apply_to_relevant_jobs(
+            page,
+            min_score=min_score,
+            message=message,
+            attachments=tuple(Path(p) for p in attachments),
+        )
 
 
 __all__ = ["scrape_xing_jobs", "apply_to_relevant_jobs", "detect_lang"]

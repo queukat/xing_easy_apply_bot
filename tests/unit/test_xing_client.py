@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import csv
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
+from xingbot.scraping.xing_cards import SearchCard
 from xingbot.settings import Settings
 from xingbot.xing.client import XingClient
 
@@ -39,6 +41,8 @@ class FakePage:
     def __init__(self, button: FakeButton | None = None) -> None:
         self.gotos: list[str] = []
         self.button = button
+        self.context = SimpleNamespace(new_page=self._new_page)
+        self._details_page = self
 
     async def goto(self, url: str, **_: object) -> None:
         self.gotos.append(url)
@@ -46,13 +50,16 @@ class FakePage:
     async def query_selector(self, _: str) -> FakeButton | None:
         return self.button
 
+    async def _new_page(self) -> "FakePage":
+        return self._details_page
 
-def _settings(tmp_path: Path) -> Settings:
+
+def _settings(tmp_path: Path, *, filter_by_description_lang: bool = False) -> Settings:
     return Settings(
         root=tmp_path,
         job_listings_csv=tmp_path / "job_listings.csv",
         stats_csv=tmp_path / "stats.csv",
-        xing_cookies_file=tmp_path / "xing_cookies.pkl",
+        xing_cookies_file=tmp_path / "xing_storage_state.json",
         debug_dir=tmp_path / "debug",
         user_data_dir=tmp_path / "user_data",
         resume_yaml=tmp_path / "resume.yaml",
@@ -61,11 +68,11 @@ def _settings(tmp_path: Path) -> Settings:
         xing_password="",
         openai_api_key="",
         gpt_eval_model="gpt-5-mini",
-        initial_xing_urls=[],
+        initial_xing_urls=["https://www.xing.com/jobs/search?keywords=test"],
         relevance_threshold=8.0,
         max_scrolls=1,
         max_jobs_collected=10,
-        filter_by_description_lang=False,
+        filter_by_description_lang=filter_by_description_lang,
         allowed_langs={"en"},
         keep_unknown_lang=True,
         headless=True,
@@ -99,6 +106,13 @@ def _prepare_two_csv(path: Path) -> None:
     )
 
 
+def _prepare_pending_csv(path: Path) -> None:
+    path.write_text(
+        "URL,ApplyStatus,ExternalURL,Description,GPT_Score,GPT_Reason,InsertionDate\n"
+        "https://www.xing.com/jobs/pending,pending, , ,9, ,2026-01-01\n"
+    )
+
+
 def _read_csv_rows(path: Path) -> tuple[list[str], list[list[str]]]:
     with path.open("r", encoding="utf-8", newline="") as f:
         rows = list(csv.reader(f))
@@ -123,9 +137,13 @@ async def test_xing_client_apply_dry_run_and_updates_status(tmp_path: Path, monk
     async def _check(*_) -> None:
         return None
 
+    async def _delay(*_, **__) -> None:
+        return None
+
     monkeypatch.setattr(client.auth, "ensure_logged_in", _ensure_logged_in)
     monkeypatch.setattr(client.auth, "is_logged_in", _is_logged_in)
     monkeypatch.setattr("xingbot.xing.client._check_for_manual_gate", _check)
+    monkeypatch.setattr("xingbot.xing.client.ahuman_delay", _delay)
     monkeypatch.setattr(client, "_extract_external_apply_url", lambda _: "")
 
     touched = await client.apply_to_relevant_jobs(page)
@@ -133,6 +151,39 @@ async def test_xing_client_apply_dry_run_and_updates_status(tmp_path: Path, monk
 
     _, rows = _read_csv_rows(settings.job_listings_csv)
     assert rows[0][1] == "pending"
+
+
+@pytest.mark.asyncio
+async def test_xing_client_apply_dry_run_never_marks_done(tmp_path: Path, monkeypatch) -> None:
+    settings = _settings(tmp_path)
+    _prepare_pending_csv(settings.job_listings_csv)
+    page = FakePage()
+    client = XingClient(settings, dry_run=True, max_actions_per_run=1, action_interval_s=0.0)
+
+    async def _ensure_logged_in(_: object) -> bool:
+        return True
+
+    async def _is_logged_in(_: object) -> bool:
+        return True
+
+    async def _check(*_) -> None:
+        return None
+
+    async def _delay(*_, **__) -> None:
+        return None
+
+    monkeypatch.setattr(client.auth, "ensure_logged_in", _ensure_logged_in)
+    monkeypatch.setattr(client.auth, "is_logged_in", _is_logged_in)
+    monkeypatch.setattr("xingbot.xing.client._check_for_manual_gate", _check)
+    monkeypatch.setattr("xingbot.xing.client.ahuman_delay", _delay)
+    monkeypatch.setattr(client, "_extract_external_apply_url", lambda _: "")
+
+    touched = await client.apply_to_relevant_jobs(page)
+    assert touched == 1
+
+    _, rows = _read_csv_rows(settings.job_listings_csv)
+    assert rows[0][1] == "pending"
+    assert rows[0][1] != "done"
 
 
 @pytest.mark.asyncio
@@ -152,9 +203,13 @@ async def test_xing_client_apply_respects_max_actions_and_confirm(tmp_path: Path
     async def _check(*_) -> None:
         return None
 
+    async def _delay(*_, **__) -> None:
+        return None
+
     monkeypatch.setattr(client.auth, "ensure_logged_in", _ensure_logged_in)
     monkeypatch.setattr(client.auth, "is_logged_in", _is_logged_in)
     monkeypatch.setattr("xingbot.xing.client._check_for_manual_gate", _check)
+    monkeypatch.setattr("xingbot.xing.client.ahuman_delay", _delay)
     monkeypatch.setattr(client, "_extract_external_apply_url", lambda _: "")
 
     monkeypatch.setattr("builtins.input", lambda _: "y")
@@ -164,3 +219,59 @@ async def test_xing_client_apply_respects_max_actions_and_confirm(tmp_path: Path
     assert button.clicked == 1
     _, rows = _read_csv_rows(settings.job_listings_csv)
     assert rows[0][1] == "done"
+
+
+@pytest.mark.asyncio
+async def test_xing_client_collect_keeps_allowed_lang_rows(tmp_path: Path, monkeypatch) -> None:
+    settings = _settings(tmp_path, filter_by_description_lang=True)
+    page = FakePage()
+    client = XingClient(settings)
+
+    async def _ensure_logged_in(_: object) -> bool:
+        return True
+
+    async def _is_logged_in(_: object) -> bool:
+        return True
+
+    async def _check(*_) -> None:
+        return None
+
+    async def _delay(*_, **__) -> None:
+        return None
+
+    async def _load_results(*_, **__) -> int:
+        return 1
+
+    async def _parse_cards(_: object) -> list[SearchCard]:
+        return [
+            SearchCard(
+                href="https://www.xing.com/jobs/allowed-1",
+                canonical_url="https://www.xing.com/jobs/allowed-1",
+                title="Allowed",
+                is_external=False,
+            )
+        ]
+
+    async def _parse_details(*_: object, **__: object) -> object:
+        return SimpleNamespace(description_text="English text that is sufficiently long " * 20)
+
+    async def _ext_url(*_: object, **__: object) -> str:
+        return ""
+
+    monkeypatch.setattr(client.auth, "ensure_logged_in", _ensure_logged_in)
+    monkeypatch.setattr(client.auth, "is_logged_in", _is_logged_in)
+    monkeypatch.setattr("xingbot.xing.client._check_for_manual_gate", _check)
+    monkeypatch.setattr("xingbot.xing.client.ahuman_delay", _delay)
+    monkeypatch.setattr("xingbot.xing.client._load_search_results", _load_results)
+    monkeypatch.setattr("xingbot.xing.client.parse_search_cards", _parse_cards)
+    monkeypatch.setattr("xingbot.xing.client.parse_details_from_page", _parse_details)
+    monkeypatch.setattr("xingbot.xing.client.detect_lang", lambda *_, **__: ("en", 0.9, "unit"))
+    monkeypatch.setattr("xingbot.xing.client._extract_external_apply_url", _ext_url)
+
+    appended = await client.collect_jobs(page)
+    assert appended == 1
+
+    _, rows = _read_csv_rows(settings.job_listings_csv)
+    assert len(rows) == 1
+    assert rows[0][0] == "https://www.xing.com/jobs/allowed-1"
+    assert rows[0][1] == "pending"

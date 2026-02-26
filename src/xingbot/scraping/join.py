@@ -24,7 +24,6 @@ import asyncio
 import datetime as dt
 import json
 import os
-import pickle
 import random
 import re
 from dataclasses import dataclass
@@ -33,16 +32,27 @@ from typing import Any, Dict, Optional, Tuple
 
 import yaml
 
-from core.constants import (
-    QUESTIONS_DB_FILE,
-    JOIN_COOKIES_FILE,
-    JOIN_EMAIL,
-    JOIN_PASSWORD,
-    RESUME_YAML_FILE,
-    DEBUG_ARTIFACTS_DIR,
-)
-from core.logger import logger
-from services.scraping.utils import ahuman_delay, move_cursor_to_element
+try:
+    from core.constants import (
+        QUESTIONS_DB_FILE,
+        JOIN_COOKIES_FILE,
+        JOIN_EMAIL,
+        JOIN_PASSWORD,
+        RESUME_YAML_FILE,
+        DEBUG_ARTIFACTS_DIR,
+    )
+    from core.logger import logger
+    from services.scraping.utils import ahuman_delay, move_cursor_to_element
+except ModuleNotFoundError:
+    from xingbot.logging import logger
+    from xingbot.utils.human import ahuman_delay, move_cursor_to_element
+
+    QUESTIONS_DB_FILE = "questions_answers_db.json"
+    JOIN_COOKIES_FILE = "join_storage_state.json"
+    JOIN_EMAIL = ""
+    JOIN_PASSWORD = ""
+    RESUME_YAML_FILE = "resume.yaml"
+    DEBUG_ARTIFACTS_DIR = "debug_artifacts"
 
 # -----------------------------------------------------------------------------
 # Constants / URLs
@@ -390,19 +400,24 @@ class JoinAuth:
     async def load_cookies(self, context: Any) -> None:
         if self.cfg.cookies_file and os.path.exists(self.cfg.cookies_file):
             try:
-                with open(self.cfg.cookies_file, "rb") as f:
-                    cookies = pickle.load(f)
+                with open(self.cfg.cookies_file, "r", encoding="utf-8") as f:
+                    payload = json.load(f) or {}
+                cookies = payload.get("cookies")
+                if not isinstance(cookies, list):
+                    raise ValueError("invalid storage_state payload")
                 await context.add_cookies(cookies)
-                logger.info("[Join] Cookies loaded.")
+                logger.info("[Join] Storage state loaded.")
             except Exception as e:
                 logger.warning("[Join] Cookies load failed: {}", e)
 
     async def save_cookies(self, context: Any) -> None:
         try:
-            cookies = await context.cookies()
-            with open(self.cfg.cookies_file, "wb") as f:
-                pickle.dump(cookies, f)
-            logger.info("[Join] Cookies saved.")
+            payload = await context.storage_state()
+            tmp = self.cfg.cookies_file + ".tmp"
+            with open(tmp, "w", encoding="utf-8") as f:
+                json.dump(payload, f, ensure_ascii=False, indent=2)
+            os.replace(tmp, self.cfg.cookies_file)
+            logger.info("[Join] Storage state saved.")
         except Exception as e:
             logger.warning("[Join] Cookies save failed: {}", e)
 

@@ -113,12 +113,24 @@ def _parse_urls_env(raw: str) -> list[str]:
     return parts
 
 
+def _has_display() -> bool:
+    if os.name == "nt":
+        return True
+    return bool(os.getenv("DISPLAY") or os.getenv("WAYLAND_DISPLAY") or os.getenv("MIR_SOCKET"))
+
+
+def _default_headless() -> bool:
+    # Prefer headful for anti-bot behavior when display is available.
+    return not _has_display()
+
+
 @dataclass(frozen=True)
 class Settings:
-            # project paths
+    # project paths
     root: Path
     job_listings_csv: Path
     stats_csv: Path
+    # Backward-compatible name; file now stores JSON Playwright storage state.
     xing_cookies_file: Path
     debug_dir: Path
     user_data_dir: Path
@@ -161,6 +173,10 @@ class Settings:
     xing_confirm_send_default: bool
     xing_proxy: str | None
 
+    @property
+    def xing_storage_state_file(self) -> Path:
+        return self.xing_cookies_file
+
     @classmethod
     def load(cls) -> "Settings":
         root = Path(__file__).resolve().parents[2]  # .../src/xingbot/settings.py -> repo root
@@ -170,19 +186,19 @@ class Settings:
         if not urls:
             urls = _default_xing_urls()
 
-        headless = _getenv_bool("HEADLESS", True)
-        user_agent = _getenv(
-            "XING_USER_AGENT",
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-            "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        )
+        headless = _getenv_bool("HEADLESS", _default_headless())
+        user_agent = _getenv("XING_USER_AGENT", "").strip()
         retry_statuses_raw = _getenv("XING_RETRY_STATUS", "429,500,502,503,504")
+        state_path_raw = _getenv("XING_STORAGE_STATE_FILE", "").strip() or _getenv("XING_COOKIES_FILE", "").strip()
+        storage_state_path = Path(state_path_raw) if state_path_raw else (root / "xing_storage_state.json")
+        if not storage_state_path.is_absolute():
+            storage_state_path = root / storage_state_path
 
         return cls(
             root=root,
             job_listings_csv=root / "job_listings.csv",
             stats_csv=root / "stats.csv",
-            xing_cookies_file=root / "xing_cookies.pkl",
+            xing_cookies_file=storage_state_path,
             debug_dir=root / "debug_artifacts",
             user_data_dir=root / "user_data",
             resume_yaml=root / "resume.yaml",
@@ -207,7 +223,7 @@ class Settings:
             xing_retry_statuses=_parse_csv_ints(retry_statuses_raw, (429, 500, 502, 503, 504)),
             xing_action_interval_s=_default_float("XING_ACTION_INTERVAL_S", 20.0),
             xing_max_actions_per_run=_default_int("XING_MAX_ACTIONS_PER_RUN", 1),
-            xing_dry_run_default=_default_bool("XING_DRY_RUN_DEFAULT", False),
+            xing_dry_run_default=_default_bool("XING_DRY_RUN_DEFAULT", True),
             xing_rate_limit_enabled=_default_bool("XING_RATE_LIMIT_ENABLED", True),
             xing_confirm_send_default=_default_bool("XING_CONFIRM_SEND_DEFAULT", False),
             xing_proxy=(lambda v: v if v else None)(_getenv("XING_PROXY", "")),

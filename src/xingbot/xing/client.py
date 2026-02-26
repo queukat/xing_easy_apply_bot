@@ -227,14 +227,14 @@ class XingAuth(CookieScraper):
             await page.screenshot(path=str(png), full_page=True)
             self._logger.warning("[Xing] Debug screenshot: {}", png)
         except Exception:
-            pass
+            self._logger.exception("[Xing] Failed to write debug screenshot (reason={}).", reason)
         try:
             html = self.settings.debug_dir / f"xing_{ts}_{reason}.html"
             content = await page.content()
             html.write_text(content, encoding="utf-8")
             self._logger.warning("[Xing] Debug html: {}", html)
         except Exception:
-            pass
+            self._logger.exception("[Xing] Failed to write debug html (reason={}).", reason)
 
     async def _goto(self, page: Page, url: str) -> None:
         await page.goto(url, wait_until="domcontentloaded", timeout=NAV_TIMEOUT_MS)
@@ -243,7 +243,7 @@ class XingAuth(CookieScraper):
         try:
             await page.context.clear_cookies()
         except Exception:
-            pass
+            self._logger.debug("[Xing] Failed to clear cookies before login.")
 
         await self._goto(page, "https://login.xing.com/")
         await ahuman_delay(0.8, 1.4)
@@ -283,7 +283,7 @@ class XingAuth(CookieScraper):
         try:
             await self._goto(page, "https://www.xing.com")
         except Exception:
-            pass
+            self._logger.debug("[Xing] Failed to open post-login home page.")
         await ahuman_delay(0.8, 1.4)
 
     async def is_logged_in(self, page: Page) -> bool:
@@ -310,7 +310,7 @@ class XingAuth(CookieScraper):
         try:
             await self._goto(page, "https://www.xing.com")
         except Exception:
-            pass
+            self._logger.warning("[Xing] Failed to open XING home page before auth check.")
 
         await ahuman_delay(0.8, 1.4)
         if await self.is_logged_in(page):
@@ -381,6 +381,12 @@ class XingClient:
         self._actions_taken = 0
         self._run_id = datetime.now().strftime("%Y%m%dT%H%M%S")
         self._logger = logger.bind(component="xing", action="client", run_id=self._run_id)
+
+    async def __aenter__(self) -> "XingClient":
+        return self
+
+    async def __aexit__(self, exc_type, exc, tb) -> None:
+        await self.close()
 
     async def ensure_logged_in(self, page: Page) -> bool:
         return await self.auth.ensure_logged_in(page)
@@ -463,6 +469,24 @@ class XingClient:
             if not exists:
                 w.writerow(["URL", "Count", "Date"])
             w.writerow([source_url, str(int(collected_count)), _now_iso()])
+
+    async def _dump_apply_debug(self, page: Page, reason: str, url: str = "") -> None:
+        self.settings.debug_dir.mkdir(parents=True, exist_ok=True)
+        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+        safe_reason = re.sub(r"[^a-zA-Z0-9._-]+", "_", (reason or "apply_error")).strip("_") or "apply_error"
+        suffix = re.sub(r"[^a-zA-Z0-9._-]+", "_", canonicalize_url(url))[:120] if url else "no_url"
+        try:
+            png = self.settings.debug_dir / f"xing_apply_{ts}_{safe_reason}_{suffix}.png"
+            await page.screenshot(path=str(png), full_page=True)
+            self._logger.warning("[Xing] Apply debug screenshot: {}", png)
+        except Exception:
+            self._logger.exception("[Xing] Failed to write apply debug screenshot (reason={}).", safe_reason)
+        try:
+            html = self.settings.debug_dir / f"xing_apply_{ts}_{safe_reason}_{suffix}.html"
+            html.write_text(await page.content(), encoding="utf-8")
+            self._logger.warning("[Xing] Apply debug html: {}", html)
+        except Exception:
+            self._logger.exception("[Xing] Failed to write apply debug html (reason={}).", safe_reason)
 
     @staticmethod
     def _safe_float(val: str, default: float = 0.0) -> float:
@@ -607,7 +631,7 @@ class XingClient:
                         row[idx_status] = ApplyStatus.NOT_ALLOWED_LANG.value
                         data.append(row)
                         total_saved += 1
-                    continue
+                        continue
 
                 ext = await _extract_external_apply_url(use_page)
                 row[idx_exturl] = ext
@@ -689,9 +713,8 @@ class XingClient:
                     metadata={"action": "apply_dry_run"},
                 )
                 log.info("[Xing][dry-run] {}", payload)
-                row[idx_status] = (
-                    ApplyStatus.DONE.value if row[idx_status].strip() else ApplyStatus.PENDING.value
-                )
+                if not row[idx_status].strip():
+                    row[idx_status] = ApplyStatus.PENDING.value
                 data[i] = row
                 touched += 1
                 if touched % 10 == 0:
@@ -705,15 +728,18 @@ class XingClient:
                 row[idx_status] = ApplyStatus.TIMEOUT.value
                 data[i] = row
                 touched += 1
+                await self._dump_apply_debug(page, "timeout", url)
                 continue
             except XingSafetyError as exc:
                 log.warning("[Xing] Safety gate hit on apply route for {}: {}", url, exc)
+                await self._dump_apply_debug(page, "safety_gate", url)
                 break
 
             await ahuman_delay(1.0, 2.0)
 
             if not await self.auth.is_logged_in(page):
                 log.error("[Xing] Lost login during apply.")
+                await self._dump_apply_debug(page, "lost_login", url)
                 return touched
 
             ext = (row[idx_ext] or "").strip()
@@ -753,6 +779,7 @@ class XingClient:
                 row[idx_status] = ApplyStatus.UNCERTAIN.value
                 data[i] = row
                 touched += 1
+                await self._dump_apply_debug(page, "no_apply_button", url)
                 if touched % 10 == 0:
                     write_csv_rows_atomic(self.settings.job_listings_csv, headers, data)
                 continue
@@ -777,6 +804,7 @@ class XingClient:
             except Exception as e:
                 row[idx_status] = ApplyStatus.ERROR_EASY.value
                 log.warning("[Xing] failed to click apply for {}: {}", url, e)
+                await self._dump_apply_debug(page, "click_failed", url)
 
             data[i] = row
             touched += 1

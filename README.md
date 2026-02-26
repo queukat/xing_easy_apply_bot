@@ -84,8 +84,9 @@ python -m pytest -q
 - `XING_RATE_LIMIT_ENABLED`
 - `XING_CONFIRM_SEND_DEFAULT`
 - `XING_PROXY`
-- `HEADLESS`
-- `XING_USER_AGENT`
+- `XING_STORAGE_STATE_FILE`
+- `HEADLESS` (если не задан, режим выбирается автоматически: headful при наличии display, иначе headless)
+- `XING_USER_AGENT` (оставь пустым, чтобы использовать UA браузера по умолчанию)
 - `XING_ALLOWED_LANGS`
 - `FILTER_BY_DESCRIPTION_LANG`
 - `KEEP_UNKNOWN_LANG`
@@ -97,7 +98,7 @@ python -m pytest -q
 
 ```ini
 LOG_LEVEL=INFO
-HEADLESS=false
+HEADLESS=
 
 XING_EMAIL=
 XING_PASSWORD=
@@ -119,12 +120,13 @@ XING_RETRY_STATUS=429,500,502,503,504
 
 XING_ACTION_INTERVAL_S=20.0
 XING_MAX_ACTIONS_PER_RUN=1
-XING_DRY_RUN_DEFAULT=false
+XING_DRY_RUN_DEFAULT=true
 XING_RATE_LIMIT_ENABLED=true
 XING_CONFIRM_SEND_DEFAULT=false
 XING_PROXY=
+XING_STORAGE_STATE_FILE=xing_storage_state.json
 
-XING_USER_AGENT=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36
+XING_USER_AGENT=
 ```
 
 ## Как работает pipeline XING
@@ -145,6 +147,14 @@ XING_USER_AGENT=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KH
 - учитывает `dry-run`, `max actions`, `confirm send`,
 - обновляет статус в CSV после каждой попытки,
 - не шлёт заявки без подтверждения, если включена ручная валидация.
+
+### CLI safe modes
+
+- `python main.py --help` — список доступных команд.
+- `python main.py --log-level DEBUG ...` — принудительно включает debug-логирование в консоли.
+- `python main.py apply --dry-run` — безопасный режим по умолчанию, без реального клика отправки.
+- `python main.py apply --no-dry-run --confirm-send` — разрешает реальный клик только с подтверждением.
+- `python -m xingbot.auto_run --once --dry-run` — одиночный безопасный прогон pipeline.
 
 ### 3) Базовый пример запуска (ручной контролируемый)
 
@@ -289,5 +299,11 @@ python scripts/xing_e2e.py --job-url "https://www.xing.com/jobs/..." --confirm-s
 
 - Файл `.env` должен содержать только локальные значения и не коммитится.
 - Для репозитория используем `.env.example` с пустыми/заглушечными значениями.
-- `.gitignore` настроен на исключение `user_data`, `log`, `debug_artifacts`, `xing_cookies.pkl`, `*storage_state*.json` и `.env`.
+- `.gitignore` настроен на исключение `user_data`, `log`, `debug_artifacts`, `xing_storage_state.json`, `*storage_state*.json` и `.env`.
 - На живом сайте не автоматизируются captcha/2FA; такие участки завершаются с понятным сообщением и инструкцией для ручного шага.
+
+### Storage state формат
+
+- Файл состояния по умолчанию: `xing_storage_state.json` (или путь из `XING_STORAGE_STATE_FILE`).
+- Формат: JSON Playwright `storage_state` (ключи `cookies`, `origins`), без `pickle`.
+- При сохранении применяется best-effort ужесточение прав файла.
