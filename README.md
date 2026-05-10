@@ -1,5 +1,9 @@
 # XING Job Automation Toolkit
 
+<!-- public-repo-status -->
+> Status: Active personal tool. Issues are kept simple; pull requests are welcome only when they match the current scope.
+
+
 Проект автоматизирует сбор вакансий с XING, ранжирование и обработку откликов через единый слой `XingClient` с тестируемыми моками.
 
 Важное ограничение: любой реальный переход по сайту выполняется аккуратно и в ручном режиме там, где это нужно по безопасности.
