@@ -311,3 +311,9 @@ python scripts/xing_e2e.py --job-url "https://www.xing.com/jobs/..." --confirm-s
 - Файл состояния по умолчанию: `xing_storage_state.json` (или путь из `XING_STORAGE_STATE_FILE`).
 - Формат: JSON Playwright `storage_state` (ключи `cookies`, `origins`), без `pickle`.
 - При сохранении применяется best-effort ужесточение прав файла.
+## License
+
+<!-- commercial-license-policy -->
+This project is licensed for non-commercial use under the [PolyForm Noncommercial License 1.0.0](https://polyformproject.org/licenses/noncommercial/1.0.0/).
+Commercial use, resale, paid distribution, marketplace publication, SaaS hosting, or bundling into a paid product requires separate written permission from the author.
+Project names, logos, package identifiers, store listings, screenshots, and other branding assets are not licensed for use in forks or redistributed builds.
